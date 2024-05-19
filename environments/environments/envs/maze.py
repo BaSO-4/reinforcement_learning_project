@@ -4,7 +4,7 @@ import pygame
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+#! all coordinates are in the form (y, x)!!!! this is due to matrix indexing
 class Maze(gym.Env):
     # maze:
     # 0 - empty cell
@@ -18,7 +18,7 @@ class Maze(gym.Env):
         self.size = size  # The size of the maze
         self.window_size = 512  # The size of the PyGame window
 
-        #! if youre changing this know: observation must be a dictionary
+        #! if youre changing this: observation space must be a dictionary
         # each location is a 2D vector
         self.observation_space = spaces.Dict(
             {
@@ -42,18 +42,18 @@ class Maze(gym.Env):
         # add walls
         # horizontally
         for i in range(size):
-            is_here = np.random.rand() < (size / 4) # expected number of walls in each direction is size/3
+            is_here = np.random.rand() < (size / 5) # expected number of walls in each direction is size/3
             if not is_here:
                 continue
-            length = np.random.randint(0, size / 2)
+            length = np.random.randint(0, size * 5 / 12)
             start = np.random.randint(0, size - length)
             self.maze[start:start+length, i] = 2
         # vertically
         for i in range(size):
-            is_here = np.random.rand() < (size / 4) # expected number of walls in each direction is size/3
+            is_here = np.random.rand() < (size / 5) # expected number of walls in each direction is size/3
             if not is_here:
                 continue
-            length = np.random.randint(0, size / 2)
+            length = np.random.randint(0, size * 5 / 12)
             start = np.random.randint(0, size - length)
             self.maze[i, start:start+length] = 2
 
@@ -76,15 +76,12 @@ class Maze(gym.Env):
 
     def _get_info(self):
         return {
-            "distance": np.linalg.norm(
-                self._agent_location - self._target_location, ord=1
-            )
+            "distance": np.linalg.norm(self._agent_location - self._target_location, ord=1)
         }
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        # We 
         # We sample the agent's location randomly until it does not coincide with the target's location or a wall
         self._agent_location = self._target_location
         while np.array_equal(self._target_location, self._agent_location) or self.maze[self._agent_location[0], self._agent_location[1]] == 2:
@@ -116,7 +113,7 @@ class Maze(gym.Env):
         if self.maze[self._agent_location[0], self._agent_location[1]] == -1:
             reward += -0.25
 
-        # An episode is done if the agent has reached the target
+        # An iteration is done if the agent has reached the target
         terminated = np.array_equal(self._agent_location, self._target_location)
         if terminated:
             reward = 1.0
@@ -129,9 +126,9 @@ class Maze(gym.Env):
 
         return observation, reward, terminated, False, info
 
-    def render(self):
-        if self.render_mode == "rgb_array":
-            return self._render_frame()
+    # def render(self):
+    #     if self.render_mode == "rgb_array":
+    #         return self._render_frame()
 
     def _render_frame(self, Q=None):
         if self.window is None and self.render_mode == "human":

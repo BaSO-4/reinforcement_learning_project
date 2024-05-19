@@ -11,13 +11,14 @@ class BasicAgent:
         best = np.argmax(evaluations)
         return best
 
-    def train(self, env, num_episodes=100, alpha=0.2, gamma=0.7, start_epsilon=0.5):
+    def train(self, env, num_iterations=100, alpha=0.2, gamma=0.7, start_epsilon=0.5):
+        print("Learning...")
         env.set_training_status(True)
         limit = env.size**2 / 2
-        for k in range(num_episodes):
-            epsilon = start_epsilon * (1 - k / num_episodes)
-            # alpha = start_alpha * (1 - k / (2*num_episodes))
-            print("Episode", k, "epsilon=", epsilon, "alpha=", alpha)
+        for k in range(num_iterations):
+            epsilon = start_epsilon * (1 - k / num_iterations)
+            # alpha = start_alpha * (1 - k / (2*num_iterations))
+            # print("Iteration", k, "epsilon=", epsilon, "alpha=", alpha)
             state = env.reset()["position"]
             done = False
             i = 0
@@ -34,15 +35,20 @@ class BasicAgent:
                 i += 1
             # if k % 10 == 0:
             #     env.print_solved(self.Q)
-        print("Training done!")
+        print("Learning done!")
         # env.print_solved(self.Q)
 
     def play(self, env):
+        limit = 3 * env.size
         env.set_training_status(False)
         state = env.reset()["position"]
         done = False
+        i = 0
         while not done:
             action_space = env.action_space
             action = self.choose_action(state, 0, action_space)
             next_state, _, done, _, _ = env.step(action)
             state = next_state["position"]
+            if i > limit:
+                break
+            i += 1

@@ -1,11 +1,12 @@
 import environments
 import gym
 from agents.basic_agent import BasicAgent
+from agents.advanced_agent import AdvancedAgent
 
-env = gym.make('environments/Maze-v0', size=20, render_mode='human')
+env = gym.make('environments/AdvancedMaze', render_mode='human')
 # env.action_space.seed(42)
-agent = BasicAgent(env.size)
-agent.train(env, num_episodes=10000)
+agent = AdvancedAgent()
+agent.train(env, num_iterations=500000)
 
 for _ in range(15):
     agent.play(env)
