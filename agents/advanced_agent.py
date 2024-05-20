@@ -6,11 +6,11 @@ class AdvancedAgent:
         self.Q = np.zeros((2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4))
     
     def decode_state(self, state):
-        walls = state["next_to_a_wall"] 
+        walls = state["next to a wall"] 
 
-        borders = state["next_to_a_border"]
+        borders = state["next to a border"]
         
-        target = state["target_in_sight"]
+        target = state["target in sight"]
         
         explored_down = state["explored"]["down"]
         explored_right = state["explored"]["right"]
@@ -18,9 +18,9 @@ class AdvancedAgent:
         explored_left = state["explored"]["left"]
         exploration_list = [explored_down, explored_right, explored_up, explored_left]
         least_explored = np.argmin(exploration_list)
-        exploration_list.remove(least_explored)
+        exploration_list.remove(exploration_list[least_explored])
         second_least_explored = np.argmin(exploration_list)
-        exploration_list.remove(second_least_explored)
+        exploration_list.remove(exploration_list[second_least_explored])
         third_least_explored = np.argmin(exploration_list)
 
         return walls, borders, target, least_explored, second_least_explored, third_least_explored
@@ -46,7 +46,7 @@ class AdvancedAgent:
             i = 0
             while not done:
                 action = self.choose_action(state, epsilon)
-                next_state, reward, done_env = env.step(action)
+                next_state, reward, done_env, _, _ = env.step(action)
                 done = done_env
                 walls, borders, target, least_explored, second_least_explored, third_least_explored = self.decode_state(state)
                 next_walls, next_borders, next_target, next_least_explored, next_second_least_explored, next_third_least_explored = self.decode_state(next_state)
@@ -68,7 +68,7 @@ class AdvancedAgent:
         i = 0
         while not done:
             action = self.choose_action(state, 0)
-            next_state, _, done = env.step(action)
+            next_state, _, done, _, _ = env.step(action)
             state = next_state
             if i > limit:
                 break

@@ -55,9 +55,11 @@ class AdvancedMaze(gym.Env):
             [0, 2, 0, 0, 0, 2, 0],
             [0, 2, 0, 0, 0, 2, 0],
             [0, 2, 0, 0, 0, 0, 0],
-            [0, 2, 2, 2, 2, 0, 0]
-            [0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 2, 2, 2, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0]
         ])
+
+        self._target_location = np.array([2, 2])
 
         self.locs_that_see_target_bellow = np.array([])
         self.locs_that_see_target_on_the_right = np.array([])
@@ -74,26 +76,26 @@ class AdvancedMaze(gym.Env):
 
     def _get_obs(self):
         obs = {}
-        # next to a wall
-        obs["next to a wall"] = np.array([0, 0, 0, 0])
-        if self.maze[self._agent_location[0] + 1, self._agent_location[1]] == 2:
-            obs["next to a wall"][0] = 1
-        if self.maze[self._agent_location[0], self._agent_location[1] + 1] == 2:
-            obs["next to a wall"][1] = 1
-        if self.maze[self._agent_location[0] - 1, self._agent_location[1]] == 2:
-            obs["next to a wall"][2] = 1
-        if self.maze[self._agent_location[0], self._agent_location[1] - 1] == 2:
-            obs["next to a wall"][3] = 1
         #  next to a border
         obs["next to a border"] = np.array([0, 0, 0, 0])
-        if self._agent_location[0] == 0:
-            obs["next to a border"][2] = 1
         if self._agent_location[0] == self.size - 1:
             obs["next to a border"][0] = 1
-        if self._agent_location[1] == 0:
-            obs["next to a border"][3] = 1
         if self._agent_location[1] == self.size - 1:
             obs["next to a border"][1] = 1
+        if self._agent_location[0] == 0:
+            obs["next to a border"][2] = 1
+        if self._agent_location[1] == 0:
+            obs["next to a border"][3] = 1
+        # next to a wall
+        obs["next to a wall"] = np.array([0, 0, 0, 0])
+        if obs["next to a border"][0] != 1 and self.maze[self._agent_location[0] + 1, self._agent_location[1]] == 2:
+            obs["next to a wall"][0] = 1
+        if obs["next to a border"][1] != 1 and self.maze[self._agent_location[0], self._agent_location[1] + 1] == 2:
+            obs["next to a wall"][1] = 1
+        if obs["next to a border"][2] != 1 and self.maze[self._agent_location[0] - 1, self._agent_location[1]] == 2:
+            obs["next to a wall"][2] = 1
+        if obs["next to a border"][2] != 1 and self.maze[self._agent_location[0], self._agent_location[1] - 1] == 2:
+            obs["next to a wall"][3] = 1
         # target in sight
         obs["target in sight"] = np.array([0, 0, 0, 0])
         if self._agent_location in self.locs_that_see_target_bellow:
@@ -155,7 +157,7 @@ class AdvancedMaze(gym.Env):
         if not self.is_training and self.render_mode == "human":
             self._render_frame()
 
-        return observation, reward, terminated
+        return observation, reward, terminated, None, {}
     
     def mark_seen_cells(self):
         i = 0
@@ -174,14 +176,14 @@ class AdvancedMaze(gym.Env):
             i += 1
         # go up
         i = 0
-        while self._agent_location[0] - i < self.size:
+        while self._agent_location[0] - i >= 0:
             if self.maze[self._agent_location[0] - i, self._agent_location[1]] == 2:
                 break
             self.maze[self._agent_location[0] - i, self._agent_location[1]] = -2
             i += 1
         # go down
         i = 0
-        while self._agent_location[1] - i < self.size:
+        while self._agent_location[1] - i >= 0:
             if self.maze[self._agent_location[0], self._agent_location[1] - 1] == 2:
                 break
             self.maze[self._agent_location[0], self._agent_location[1] - i] = -2

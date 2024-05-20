@@ -5,6 +5,6 @@ register(
     entry_point="environments.envs:Maze",
 )
 register(
-    id="environments/AdvancedMaze",
+    id="environments/AdvancedMaze-v0",
     entry_point="environments.envs:AdvancedMaze",
 )

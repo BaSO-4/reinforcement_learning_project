@@ -13,6 +13,10 @@ class Maze(gym.Env):
     # 2 - wall
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 8}
+    frodo_concerned = pygame.image.load('images\\frodo_concerned.jpg')
+    frodo_happy = pygame.image.load('images\\frodo_happy.jpg')
+    mordor = pygame.image.load('images\\mordor.jpg')
+
 
     def __init__(self, render_mode=None, size=5):
         self.size = size  # The size of the maze
@@ -145,21 +149,32 @@ class Maze(gym.Env):
         )  # The size of a single grid square in pixels
 
         # First we draw the target
-        pygame.draw.rect(
-            canvas,
-            (255, 0, 0),
-            pygame.Rect(
-                pix_square_size * self._target_location,
-                (pix_square_size, pix_square_size),
-            ),
+        mordor = pygame.transform.scale(
+            self.mordor, 
+            (pix_square_size, pix_square_size)
         )
+        canvas.blit(mordor, self._target_location * pix_square_size)
+        # pygame.draw.rect(
+        #     canvas,
+        #     (255, 0, 0),
+        #     pygame.Rect(
+        #         pix_square_size * self._target_location,
+        #         (pix_square_size, pix_square_size),
+        #     ),
+        # )
+
         # Now we draw the agent
-        pygame.draw.circle(
-            canvas,
-            (0, 0, 255),
-            (self._agent_location + 0.5) * pix_square_size,
-            pix_square_size / 3,
+        frodo = pygame.transform.scale(
+            (self.frodo_concerned if self.maze[self._agent_location[0], self._agent_location[1]] == -1 else self.frodo_happy),
+            (pix_square_size, pix_square_size)
         )
+        canvas.blit(frodo, self._agent_location * pix_square_size)
+        # pygame.draw.circle(
+        #     canvas,
+        #     (0, 0, 255),
+        #     (self._agent_location + 0.5) * pix_square_size,
+        #     pix_square_size / 3,
+        # )
 
         # add some gridlines
         for x in range(self.size + 1):
