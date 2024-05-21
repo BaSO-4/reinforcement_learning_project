@@ -8,3 +8,7 @@ register(
     id="environments/AdvancedMaze-v0",
     entry_point="environments.envs:AdvancedMaze",
 )
+register(
+    id="environments/ExampleMaze-v0",
+    entry_point="environments.envs:ExampleMaze",
+)
