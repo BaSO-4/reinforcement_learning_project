@@ -1,4 +1,5 @@
 import numpy as np
+from utility_functions import plot_q_matrix
 
 class BasicAgent:
     def __init__(self, env_size):
@@ -33,10 +34,8 @@ class BasicAgent:
                 if i > limit:
                     break
                 i += 1
-            # if k % 10 == 0:
-            #     env.print_solved(self.Q)
         print("Learning done!")
-        # env.print_solved(self.Q)
+        # plot_q_matrix(self.Q) # to še zmer ne dela hahaha
 
     def play(self, env):
         limit = 3 * env.size

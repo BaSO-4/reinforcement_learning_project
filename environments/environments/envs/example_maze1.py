@@ -4,22 +4,26 @@ import pygame
 import numpy as np
 
 #! all coordinates are in the form (y, x)!!!! this is due to matrix indexing
-class Maze(gym.Env):
+class ExampleMaze(gym.Env):
     # maze:
     # 0 - empty cell
     # 1 - target cell
     # -1 - visited cell
     # 2 - wall
 
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 8}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
     frodo_concerned = pygame.image.load('images\\frodo_concerned.jpg')
     frodo_happy = pygame.image.load('images\\frodo_happy.jpg')
     mordor = pygame.image.load('images\\mordor.jpg')
+    wall = pygame.image.load('images\\wall.jpg')
+    enemy = pygame.image.load('images\\nazgul.jpg')
 
 
-    def __init__(self, render_mode=None, size=5):
+    def __init__(self, render_mode=None, size=8):
         self.size = size  # The size of the maze
         self.window_size = 512  # The size of the PyGame window
+        self.step_count = 0
+
 
         #! if youre changing this: observation space must be a dictionary
         # each location is a 2D vector
@@ -40,28 +44,22 @@ class Maze(gym.Env):
         }
 
 
-        self.maze = np.zeros((size, size), dtype=int)
-            
-        # add walls
-        # horizontally
-        for i in range(size):
-            is_here = np.random.rand() < (size / 5) # expected number of walls in each direction is size/3
-            if not is_here:
-                continue
-            length = np.random.randint(0, size * 5 / 12)
-            start = np.random.randint(0, size - length)
-            self.maze[start:start+length, i] = 2
-        # vertically
-        for i in range(size):
-            is_here = np.random.rand() < (size / 5) # expected number of walls in each direction is size/3
-            if not is_here:
-                continue
-            length = np.random.randint(0, size * 5 / 12)
-            start = np.random.randint(0, size - length)
-            self.maze[i, start:start+length] = 2
-
-        self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
-        while self.maze[self._target_location[0], self._target_location[1]] == 2:
+        self.maze = np.array([
+                [0, 2, 0, 0, 0, 0, 0, 0],
+                [0, 2, 0, 2, 0, 2, 0, 0],
+                [0, 0, 0, 2, 2, 0, 2, 0],
+                [0, 2, 0, 2, 0, 0, 0, 0],
+                [2, 0, 0, 2, 0, 2, 0, 0],
+                [0, 0, 0, 2, 0, 2, 2, 2],
+                [0, 2, 2, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 2, 0, 0]
+            ])
+    
+    
+        #self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
+        self._target_location = np.array([3,7])
+        self._enemy_location = np.array([2,5]) #2,5<->3,5
+        while self.maze[self._target_location[0], self._target_location[1]] == 2 or np.array_equal(self._target_location, self._enemy_location):
             self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
         self.maze[self._target_location[0], self._target_location[1]] = 1
 
@@ -106,8 +104,10 @@ class Maze(gym.Env):
             reward = -0.8
         elif self.maze[attempted_location[0], attempted_location[1]] == 2:
             reward = -0.8
+        elif np.array_equal(attempted_location, self._enemy_location):  # Agent meets the enemy
+            reward = -1.0  # Penalty for meeting the enemy
         else:
-            reward = -0.04 # small negative reward for each step
+            reward = -0.3 # small negative reward for each step
             self._agent_location = attempted_location
             # mark visited cell
             self.maze[self._agent_location[0], self._agent_location[1]] = -1
@@ -127,7 +127,21 @@ class Maze(gym.Env):
         if not self.is_training and self.render_mode == "human":
             self._render_frame()
 
+        # Determine enemy's location based on the step count
+        if self.step_count % 4 == 0:
+            self._enemy_location = np.array([2,5])
+        elif self.step_count % 4 == 1:
+            self._enemy_location = np.array([3,5])
+        elif self.step_count % 4 == 2:
+            self._enemy_location = np.array([3,6])
+        else: 
+            self._enemy_location = np.array([3,5])
+
+        # Increment step count
+        self.step_count += 1
+
         return observation, reward, terminated, False, info
+
 
     # def render(self):
     #     if self.render_mode == "rgb_array":
@@ -153,14 +167,14 @@ class Maze(gym.Env):
             (pix_square_size, pix_square_size)
         )
         canvas.blit(mordor, self._target_location * pix_square_size)
-        # pygame.draw.rect(
-        #     canvas,
-        #     (255, 0, 0),
-        #     pygame.Rect(
-        #         pix_square_size * self._target_location,
-        #         (pix_square_size, pix_square_size),
-        #     ),
-        # )
+
+        # Now we draw the enemy
+        enemy = pygame.transform.scale(
+            self.enemy, 
+            (pix_square_size, pix_square_size)
+        )
+
+        canvas.blit(enemy, self._enemy_location * pix_square_size)
 
         # Now we draw the agent
         frodo = pygame.transform.scale(
@@ -168,13 +182,7 @@ class Maze(gym.Env):
             (pix_square_size, pix_square_size)
         )
         canvas.blit(frodo, self._agent_location * pix_square_size)
-        # pygame.draw.circle(
-        #     canvas,
-        #     (0, 0, 255),
-        #     (self._agent_location + 0.5) * pix_square_size,
-        #     pix_square_size / 3,
-        # )
-
+        '''
         # add some gridlines
         for x in range(self.size + 1):
             pygame.draw.line(
@@ -182,28 +190,26 @@ class Maze(gym.Env):
                 0,
                 (0, pix_square_size * x),
                 (self.window_size, pix_square_size * x),
-                width=3,
+                width=1,
             )
             pygame.draw.line(
                 canvas,
                 0,
                 (pix_square_size * x, 0),
                 (pix_square_size * x, self.window_size),
-                width=3,
+                width=1,
             )
-
-        # add walls
+        '''
+        ### add walls
+        wall = pygame.transform.scale(
+            self.wall, 
+            (pix_square_size, pix_square_size))
+        
         for i in range(self.size):
             for j in range(self.size):
-                if self.maze[i, j] == 2:
-                    pygame.draw.rect(
-                        canvas,
-                        (0, 0, 0),
-                        pygame.Rect(
-                            pix_square_size * np.array([i, j]),
-                            (pix_square_size, pix_square_size),
-                        ),
-                    )
+                if self.maze[j, i] == 2:
+                    canvas.blit(wall, (j * pix_square_size, i * pix_square_size))
+
 
         if self.render_mode == "human":
             # The following line copies our drawings from `canvas` to the visible window
