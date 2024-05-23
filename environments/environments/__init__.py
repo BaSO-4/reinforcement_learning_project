@@ -12,3 +12,7 @@ register(
     id="environments/ExampleMaze-v0",
     entry_point="environments.envs:ExampleMaze",
 )
+register(
+    id="environments/ExampleMaze-v2",
+    entry_point="environments.envs:ExampleMaze2",
+)
