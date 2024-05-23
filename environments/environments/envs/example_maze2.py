@@ -46,8 +46,8 @@ class ExampleMaze2(gym.Env):
 
 
         self.maze = np.array([
-                [0, 2, 0, 0, 0, 0, 0, 0],
-                [0, 2, 0, 2, 0, 2, 0, 0],
+                [2, 0, 0, 0, 0, 0, 0, 0],
+                [2, 2, 0, 2, 0, 2, 0, 0],
                 [0, 0, 0, 2, 2, 0, 2, 0],
                 [2, 2, 0, 2, 0, 0, 0, 0],
                 [2, 0, 0, 2, 0, 2, 0, 0],
@@ -127,19 +127,42 @@ class ExampleMaze2(gym.Env):
             self._render_frame()
 
         def move_enemy_towards_agent(enemy_location, agent_location):
-            direction = agent_location - enemy_location
-            possible_directions = [np.array([np.sign(direction[0]), 0]), np.array([0, np.sign(direction[1])])]
-            
-            # Check if the primary direction is valid
-            for direction in possible_directions:
-                attempted_enemy_location = enemy_location + direction
+
+            loc1 = (enemy_location-agent_location)[0]>0
+            loc2 = (enemy_location-agent_location)[1]>0
+            loc3 = (enemy_location-agent_location)[0]<0
+            loc4 = (enemy_location-agent_location)[1]<0
+
+            if(loc1):
+                attempted_enemy_location = enemy_location + np.array([-1, 0])
+                if (np.all(attempted_enemy_location >= 0) and 
+                    np.all(attempted_enemy_location < self.size) and 
+                    self.maze[attempted_enemy_location[0], attempted_enemy_location[1]] != 2):
+                    return attempted_enemy_location
+                
+            if(loc2):
+                attempted_enemy_location = enemy_location + np.array([0, -1])
                 if (np.all(attempted_enemy_location >= 0) and 
                     np.all(attempted_enemy_location < self.size) and 
                     self.maze[attempted_enemy_location[0], attempted_enemy_location[1]] != 2):
                     return attempted_enemy_location
 
-            # If the primary direction is not valid, choose a random valid direction
-            possible_directions = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
+            if(loc3):
+                attempted_enemy_location = enemy_location + np.array([1, 0])
+                if (np.all(attempted_enemy_location >= 0) and 
+                    np.all(attempted_enemy_location < self.size) and 
+                    self.maze[attempted_enemy_location[0], attempted_enemy_location[1]] != 2):
+                    return attempted_enemy_location
+
+            if(loc4):
+                attempted_enemy_location = enemy_location + np.array([0, 1])
+                if (np.all(attempted_enemy_location >= 0) and 
+                    np.all(attempted_enemy_location < self.size) and 
+                    self.maze[attempted_enemy_location[0], attempted_enemy_location[1]] != 2):
+                    return attempted_enemy_location
+                
+            # If going down is not valid, choose a random valid direction
+            possible_directions = [np.array([1,0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
             np.random.shuffle(possible_directions)
             for direction in possible_directions:
                 attempted_enemy_location = enemy_location + direction
@@ -148,10 +171,12 @@ class ExampleMaze2(gym.Env):
                     self.maze[attempted_enemy_location[0], attempted_enemy_location[1]] != 2):
                     return attempted_enemy_location
 
+
             return enemy_location
 
+
         self._enemy_location = move_enemy_towards_agent(self._enemy_location, self._agent_location)
-        '''
+        
         # Penalty for being adjacent to the enemy
         adjacent_positions = [
             self._agent_location + np.array([1, 0]),
@@ -162,8 +187,8 @@ class ExampleMaze2(gym.Env):
 
         for pos in adjacent_positions:
             if np.array_equal(pos, self._enemy_location):
-                reward -= -1.0
-        '''
+                reward -= 1.0
+        
         # Increment step count
         self.step_count += 1
 
