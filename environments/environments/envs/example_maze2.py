@@ -4,7 +4,7 @@ import pygame
 import numpy as np
 
 #! all coordinates are in the form (y, x)!!!! this is due to matrix indexing
-class ExampleMaze(gym.Env):
+class ExampleMaze2(gym.Env):
     # maze:
     # 0 - empty cell
     # 1 - target cell
@@ -17,8 +17,7 @@ class ExampleMaze(gym.Env):
     mordor = pygame.image.load('images\\mordor.jpg')
     wall = pygame.image.load('images\\wall.jpg')
     enemy = pygame.image.load('images\\nazgul.jpg')
-    #enemy2 = pygame.image.load('images\\voldemort.jpg')
-    enemy3 = pygame.image.load('images\\bellatrix.jpg')
+
 
 
     def __init__(self, render_mode=None, size=8):
@@ -50,7 +49,7 @@ class ExampleMaze(gym.Env):
                 [0, 2, 0, 0, 0, 0, 0, 0],
                 [0, 2, 0, 2, 0, 2, 0, 0],
                 [0, 0, 0, 2, 2, 0, 2, 0],
-                [0, 2, 0, 2, 0, 0, 0, 0],
+                [2, 2, 0, 2, 0, 0, 0, 0],
                 [2, 0, 0, 2, 0, 2, 0, 0],
                 [0, 0, 0, 2, 0, 2, 2, 2],
                 [0, 2, 2, 0, 0, 0, 0, 0],
@@ -60,11 +59,9 @@ class ExampleMaze(gym.Env):
     
         #self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
         self._target_location = np.array([3,7])
-        self._enemy_location = np.array([2,5]) #2,5<->3,5
-        #self._enemy_location2 = np.array([0,4]) #0,4<->1,4
-        self._enemy_location3 = np.array([4,1]) #4,1<->5,1
-        while self.maze[self._target_location[0], self._target_location[1]] == 2 or np.array_equal(self._target_location, self._enemy_location) or np.array_equal(self._target_location, self._enemy_location3):
-            self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
+        self._enemy_location = np.array([6,0])
+        #while self.maze[self._enemy_location[0], self._enemy_location[1]] == 2 or np.array_equal(self._target_location, self._enemy_location):
+        #    self._enemy_location = self.np_random.integers(0, self.size, size=2, dtype=int)
         self.maze[self._target_location[0], self._target_location[1]] = 1
 
 
@@ -89,7 +86,8 @@ class ExampleMaze(gym.Env):
 
         # We sample the agent's location randomly until it does not coincide with the target's location, enemys location or a wall
         self._agent_location = self._target_location
-        while np.array_equal(self._target_location, self._agent_location) or np.array_equal(self._enemy_location, self._agent_location) or np.array_equal(self._enemy_location3, self._agent_location) or self.maze[self._agent_location[0], self._agent_location[1]] == 2:
+        self._enemy_location = np.array([6,0])
+        while np.array_equal(self._target_location, self._agent_location) or np.array_equal(self._enemy_location, self._agent_location) or self.maze[self._agent_location[0], self._agent_location[1]] == 2:
             self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
 
         observation = self._get_obs()
@@ -100,34 +98,27 @@ class ExampleMaze(gym.Env):
 
         return observation
 
-    def step(self, action):        
+    def step(self, action):
         direction = self._action_to_direction[action]
-        # we check if there was an attempt to leave the grid or walk into a wall
         attempted_location = self._agent_location + direction
-        if np.any(attempted_location < 0) or np.any(attempted_location >= self.size):
-            reward = -0.8
-        elif self.maze[attempted_location[0], attempted_location[1]] == 2:
-            reward = -0.8
-        elif np.array_equal(attempted_location, self._enemy_location):  # Agent meets the enemy
-            reward = -1.0  # Penalty for meeting the enemy
-        #elif np.array_equal(attempted_location, self._enemy_location2):  # Agent meets the second enemy
-        #    reward = -1.0  # Penalty for meeting the enemy
-        elif np.array_equal(attempted_location, self._enemy_location3):  # Agent meets the second enemy
-            reward = -1.0  # Penalty for meeting the enemy
-        else:
-            reward = -0.4 # small negative reward for each step
-            self._agent_location = attempted_location
-            # mark visited cell
-            self.maze[self._agent_location[0], self._agent_location[1]] = -1
         
-        # negative reward for revisiting cells
-        if self.maze[self._agent_location[0], self._agent_location[1]] == -1:
-            reward += -0.25
+        if np.any(attempted_location < 0) or np.any(attempted_location >= self.size): #out of maze
+            reward = -0.8
+        elif self.maze[attempted_location[0], attempted_location[1]] == 2: # wall
+            reward = -0.8
+        else:
+            reward = -0.3 #step
+            self._agent_location = attempted_location
+            self.maze[self._agent_location[0], self._agent_location[1]] = -1
 
-        # An iteration is done if the agent has reached the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
-        if terminated:
-            reward = 1.0
+            if np.array_equal(self._agent_location, self._enemy_location):
+                reward = -5.0
+
+        if np.array_equal(self._agent_location, self._target_location):#reaches target
+            reward = 10.0
+            terminated = True
+        else:
+            terminated = False
 
         observation = self._get_obs()
         info = self._get_info()
@@ -135,24 +126,44 @@ class ExampleMaze(gym.Env):
         if not self.is_training and self.render_mode == "human":
             self._render_frame()
 
-        # Determine enemy's location based on the step count
-        if self.step_count % 2 == 0:
-            self._enemy_location = np.array([2,5])
-        else:
-            self._enemy_location = np.array([3,5])
+        def move_enemy_towards_agent(enemy_location, agent_location):
+            direction = agent_location - enemy_location
+            possible_directions = [np.array([np.sign(direction[0]), 0]), np.array([0, np.sign(direction[1])])]
+            
+            # Check if the primary direction is valid
+            for direction in possible_directions:
+                attempted_enemy_location = enemy_location + direction
+                if (np.all(attempted_enemy_location >= 0) and 
+                    np.all(attempted_enemy_location < self.size) and 
+                    self.maze[attempted_enemy_location[0], attempted_enemy_location[1]] != 2):
+                    return attempted_enemy_location
 
-        # Determine 2nd enemy's location based on the step count
-        #if self.step_count % 2 == 0:
-        #    self._enemy_location2 = np.array([1,4])
-        #else:
-        #    self._enemy_location2 = np.array([0,4])
+            # If the primary direction is not valid, choose a random valid direction
+            possible_directions = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
+            np.random.shuffle(possible_directions)
+            for direction in possible_directions:
+                attempted_enemy_location = enemy_location + direction
+                if (np.all(attempted_enemy_location >= 0) and 
+                    np.all(attempted_enemy_location < self.size) and 
+                    self.maze[attempted_enemy_location[0], attempted_enemy_location[1]] != 2):
+                    return attempted_enemy_location
 
-        # Determine 3rd enemy's location based on the step count
-        if self.step_count % 2 == 0:
-            self._enemy_location3 = np.array([4,1])
-        else:
-            self._enemy_location3 = np.array([5,1])
+            return enemy_location
 
+        self._enemy_location = move_enemy_towards_agent(self._enemy_location, self._agent_location)
+        '''
+        # Penalty for being adjacent to the enemy
+        adjacent_positions = [
+            self._agent_location + np.array([1, 0]),
+            self._agent_location + np.array([-1, 0]),
+            self._agent_location + np.array([0, 1]),
+            self._agent_location + np.array([0, -1])
+        ]
+
+        for pos in adjacent_positions:
+            if np.array_equal(pos, self._enemy_location):
+                reward -= -1.0
+        '''
         # Increment step count
         self.step_count += 1
 
@@ -192,21 +203,6 @@ class ExampleMaze(gym.Env):
 
         canvas.blit(enemy, self._enemy_location * pix_square_size)
 
-        # Now we draw the 2nd enemy
-        #enemy2 = pygame.transform.scale(
-        #    self.enemy2, 
-        #    (pix_square_size, pix_square_size)
-        #)
-
-        #canvas.blit(enemy2, self._enemy_location2 * pix_square_size)
-
-        # Now we draw the 3rd enemy
-        enemy3 = pygame.transform.scale(
-            self.enemy3, 
-            (pix_square_size, pix_square_size)
-        )
-
-        canvas.blit(enemy3, self._enemy_location3 * pix_square_size)
 
         # Now we draw the agent
         frodo = pygame.transform.scale(
