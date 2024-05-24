@@ -1,6 +1,17 @@
 setup.py
+environments/__init__.py
 environments.egg-info/PKG-INFO
 environments.egg-info/SOURCES.txt
 environments.egg-info/dependency_links.txt
 environments.egg-info/requires.txt
 environments.egg-info/top_level.txt
+environments/envs/__init__.py
+environments/envs/advanced_maze.py
+environments/envs/example_maze1.py
+environments/envs/example_maze2.py
+environments/envs/maze.py
+environments/wrappers/__init__.py
+environments/wrappers/clip_reward.py
+environments/wrappers/discrete_actions.py
+environments/wrappers/reacher_weighted_reward.py
+environments/wrappers/relative_position.py
