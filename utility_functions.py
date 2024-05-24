@@ -141,6 +141,7 @@ maze_10_6 = np.array([
 ], dtype=np.int8)
 
 def my_mazes():
+    # return np.array([maze_5_1, maze_5_2, maze_5_3, maze_5_4, maze_5_5])
     return np.array([maze_5_1, maze_5_2, maze_5_3, maze_5_4, maze_5_5, maze_7_1, maze_7_2, maze_10_1, maze_10_2, maze_10_3, maze_10_4, maze_10_5, maze_10_6])
 
 

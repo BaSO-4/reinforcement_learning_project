@@ -1,20 +1,19 @@
 import numpy as np
 
+# zbriš dead end, namest % dej število že znanih za vsako smer
+
 class AdvancedAgent:
     def __init__(self):
         # 2s are for binary encodings. 4s are for: which direction is least explored, which is second least explored... 5s are for last moves (d, r, u, l, None) last 4 is for moves
-        self.Q = np.zeros((2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 5, 5, 5, 5, 4))
-        # self.Q = np.zeros((2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 5, 5, 5, 5, 4))
+        self.Q = np.zeros((2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 5, 5, 4))
+        # 102.404 possible states
     
     def decode_state(self, state):
-        walls = state["next to a wall"] 
-
-        borders = state["next to a border"]
-        
-        # dead_ends = state["dead end in sight"]
+        walls_or_borders = state["next to a wall or border"] 
 
         target = state["target in sight"]
-        
+        target_direction = state["target in direction"]
+
         explored_down = state["explored"]["down"]
         explored_right = state["explored"]["right"]
         explored_up = state["explored"]["up"]
@@ -26,26 +25,24 @@ class AdvancedAgent:
         exploration_list.remove(exploration_list[second_least_explored])
         third_least_explored = np.argmin(exploration_list)
         last_moves = state["last moves"]
-        last_move_0 = last_moves[3] if last_moves[3] is not None else 4
-        last_move_1 = last_moves[2] if last_moves[2] is not None else 4
-        last_move_2 = last_moves[1] if last_moves[1] is not None else 4
-        last_move_3 = last_moves[0] if last_moves[0] is not None else 4
+        last_move_0 = last_moves[1] if last_moves[1] is not None else 4
+        last_move_1 = last_moves[0] if last_moves[0] is not None else 4
 
-
-        return walls, borders, target, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1, last_move_2, last_move_3
-        # return walls, borders, dead_ends, target, least_explored, second_least_explored, third_least_explored
+        return walls_or_borders, target, target_direction, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1
 
     def choose_action(self, state, epsilon):
         if np.random.rand() < epsilon:
             return np.random.randint(4)
 
-        walls, borders, target, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1, last_move_2, last_move_3 = self.decode_state(state)
-        # walls, borders, dead_ends, target, least_explored, second_least_explored, third_least_explored = self.decode_state(state)
+        walls_or_borders, target, target_direction, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1 = self.decode_state(state)
 
-        # evaluations = self.Q[walls[0], walls[1], walls[2], walls[3], borders[0], borders[1], borders[2], borders[3], dead_ends[0], dead_ends[1], dead_ends[2], dead_ends[3], target[0], target[1], target[2], target[3], least_explored, second_least_explored, third_least_explored]
-        evaluations = self.Q[walls[0], walls[1], walls[2], walls[3], borders[0], borders[1], borders[2], borders[3], target[0], target[1], target[2], target[3], least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1, last_move_2, last_move_3]
-        best = np.argmax(evaluations)
-        return best
+        if target:
+            evaluations = self.Q[0, 0, 0, 0, target_direction[0], target_direction[1], target_direction[2], target_direction[3], 0, 0, 0, 0, 0]
+        else:
+            evaluations = self.Q[walls_or_borders[0], walls_or_borders[1], walls_or_borders[2], walls_or_borders[3], 0, 0, 0, 0, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1]
+        max_value = np.max(evaluations)
+        max_indices = np.flatnonzero(evaluations == max_value)
+        return np.random.choice(max_indices)
 
     def train(self, env, num_iterations, alpha=0.2, gamma=0.7, start_epsilon=0.1):
         print("Learning...")
@@ -60,10 +57,22 @@ class AdvancedAgent:
                 action = self.choose_action(state, epsilon)
                 next_state, reward, done_env, _, _ = env.step(action)
                 done = done_env
-                walls, borders, target, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1, last_move_2, last_move_3 = self.decode_state(state)
-                next_walls, next_borders, next_target, next_least_explored, next_second_least_explored, next_third_least_explored, next_last_move_0, next_last_move_1, next_last_move_2, next_last_move_3 = self.decode_state(next_state)
-                self.Q[walls[0], walls[1], walls[2], walls[3], borders[0], borders[1], borders[2], borders[3], target[0], target[1], target[2], target[3], least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1, last_move_2, last_move_3, action] += alpha * (reward + gamma * np.max(self.Q[next_walls[0], next_walls[1], next_walls[2], next_walls[3], next_borders[0], next_borders[1], next_borders[2], next_borders[3], next_target[0], next_target[1], next_target[2], next_target[3], next_least_explored, next_second_least_explored, next_third_least_explored, next_last_move_0, next_last_move_1, next_last_move_2, next_last_move_3]) - self.Q[walls[0], walls[1], walls[2], walls[3], borders[0], borders[1], borders[2], borders[3], target[0], target[1], target[2], target[3], least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1, last_move_2, last_move_3, action])
+
+                walls_or_borders, target, target_direction, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1 = self.decode_state(state)
+                next_walls_or_borders, next_target, next_target_direction, next_least_explored, next_second_least_explored, next_third_least_explored, next_last_move_0, next_last_move_1 = self.decode_state(next_state)
+
+                if target:                    
+                    access_vector = [0, 0, 0, 0, target_direction[0], target_direction[1], target_direction[2], target_direction[3], 0, 0, 0, 0, 0, action]
+                else:
+                    access_vector = [walls_or_borders[0], walls_or_borders[1], walls_or_borders[2], walls_or_borders[3], 0, 0, 0, 0, least_explored, second_least_explored, third_least_explored, last_move_0, last_move_1, action]
+                if next_target:
+                    choosing_vector = [0, 0, 0, 0, next_target_direction[0], next_target_direction[1], next_target_direction[2], next_target_direction[3], 0, 0, 0, 0, 0]
+                else:
+                    choosing_vector = [next_walls_or_borders[0], next_walls_or_borders[1], next_walls_or_borders[2], next_walls_or_borders[3], 0, 0, 0, 0, next_least_explored, next_second_least_explored, next_third_least_explored, next_last_move_0, next_last_move_1]
+                
+                self.Q[tuple(access_vector)] += alpha * (reward + gamma * np.max(self.Q[tuple(choosing_vector)]) - self.Q[tuple(access_vector)])
                 state = next_state
+                
                 if i > limit:
                     break
                 i += 1
@@ -78,7 +87,7 @@ class AdvancedAgent:
         done = False
         i = 0
         while not done:
-            limit = 3 * env.size
+            limit = 6 * env.size
             action = self.choose_action(state, 0)
             next_state, _, done, _, _ = env.step(action)
             state = next_state
