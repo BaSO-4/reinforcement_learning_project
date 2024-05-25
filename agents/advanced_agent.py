@@ -77,8 +77,9 @@ class AdvancedAgent:
                     break
                 i += 1
             if k % 10000 == 0:
-                print("Iteration", k)
                 np.save('Q_matrices/advanced.npy', self.Q)
+            if k % 5000 == 0:
+                print("Iteration", k)
         print("Learning done!")
 
     def play(self, env):

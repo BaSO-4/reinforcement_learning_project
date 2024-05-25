@@ -151,6 +151,7 @@ def play(agent, Q_path, env, times):
     agent.Q = Q
     for _ in range(times):
         agent.play(env)
+    env.close()
 
 
 def get_best_action_and_value(q_values):

@@ -16,3 +16,7 @@ register(
     id="environments/ExampleMaze-v2",
     entry_point="environments.envs:ExampleMaze2",
 )
+register(
+    id="environments/ZeroKNowledgeMaze-v0",
+    entry_point="environments.envs:ZeroKnowledgeMaze",
+)

@@ -59,9 +59,10 @@ class ExampleMaze2(gym.Env):
     
         #self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
         self._target_location = np.array([3,7])
-        self._enemy_location = np.array([6,0])
-        #while self.maze[self._enemy_location[0], self._enemy_location[1]] == 2 or np.array_equal(self._target_location, self._enemy_location):
-        #    self._enemy_location = self.np_random.integers(0, self.size, size=2, dtype=int)
+        # self._enemy_location = np.array([6,0])
+        self._enemy_location = self._target_location
+        while self.maze[self._enemy_location[0], self._enemy_location[1]] == 2 or np.array_equal(self._target_location, self._enemy_location):
+           self._enemy_location = self.np_random.integers(0, self.size, size=2, dtype=int)
         self.maze[self._target_location[0], self._target_location[1]] = 1
 
 
